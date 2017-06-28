@@ -73,6 +73,8 @@
 \paragraph{密码表}首先我们使用了16位寄存器以储存密码和密码长度，使用数据选择器对数据进行选择,在开锁情况下，给予修改信号可以对密码进行修改，当使用计数器对每一位进行修改，可以通过关闭修改信号以停止修改，当不再修改密码时，自动复位。
 \paragraph{密码计数器}串行输入密码，每输对一位密码，计一次数，可以通过按键计数器与计时器所给的复位信号进行复位(同步清零)。
 \paragraph{开锁控制器}实际上是一个等值比较器，将密码计数器的值与设置的密码长度进行比较，若相等，则输出为1。
+\paragraph{核心功能}就是对开锁，解锁，修改密码的整合。
+\paragraph{计时器}产生倒计时并可以输出倒计时归零信号。
 \section{调试过程}
 \subsection{密码表中出现的问题}
 \begin{enumerate}
@@ -88,6 +90,13 @@
         \includegraphics[width=0.9\textwidth]{./images/error5.eps}
 
   \item 中间调试过程中发现改了一位密码就会改变开锁状态，导致密码修改失败，经过修改，使得密码长度变更发生在密码更改完毕后，解决问题。
+  
+  \item 仿真时完全正确，当下载综合到开发板上时，完全不正确。经研究还是密码表的问题，进行大修，重写，测试通过。
+\end{enumerate}
+
+\subsection{数码管}
+\begin{enumerate}
+  \item 数码管会有抖动，查找资料，修改代码，将显示与更改显示值的时间错开，完成数码管消隐。
 \end{enumerate}
 
 \subsection{按键处理模块问题}
@@ -128,6 +137,7 @@
   \item verilog语言实现任意分频http://blog.csdn.net/ywhfdl/article/details/7641288
   \item verilog入门教程
   \item Tobias Oetiker,Hubert Partl, Irene Hyna and Elisabeth Schlegl,lshort-zh-cn
+  \item 单片机数码管显示消隐 http://www.eeworld.com.cn/mcu/article \_ 2016122332568.html 
 \end{enumerate}
 
 \newpage
@@ -138,7 +148,7 @@
 \begin{figure}[htb]
   \begin{minipage}[b]{0.5\textwidth}
     \centering
-    \includegraphics{./images/counter.eps}
+    \includegraphics[width = \textwidth]{./images/counter.eps}
     \caption{密码长度计数器}
     \label{fig:by:table}
   \end{minipage}%
@@ -160,7 +170,7 @@
 \begin{figure}[htb]
   \begin{minipage}[b]{0.5\textwidth}
     \centering
-    \includegraphics{./images/pwdprocess.eps}
+    \includegraphics[width = \textwidth]{./images/pwdprocess.eps}
     \caption{密码处理}
     \label{fig:by:table}
   \end{minipage}%
@@ -182,7 +192,7 @@
 \begin{figure}[htb]
   \begin{minipage}[b]{0.5\textwidth}
     \centering
-    \includegraphics{./images/Lock.eps}
+    \includegraphics[width = \textwidth]{./images/Lock.eps}
     \caption{开锁控制器}
     \label{fig:by:table}
   \end{minipage}%
@@ -203,7 +213,7 @@
 \begin{figure}[htb]
   \begin{minipage}[b]{0.5\textwidth}
     \centering
-    \includegraphics{./images/pwdlist.eps}
+    \includegraphics[width = \textwidth]{./images/pwdlist.eps}
     \caption{密码表}
     \label{fig:by:table}
   \end{minipage}%
@@ -224,11 +234,11 @@
   \end{minipage}
 \end{figure}
 
-\subsection{按键部分}
+\subsection{核心综合}
 \begin{figure}[htb]
   \begin{minipage}[b]{0.5\textwidth}
     \centering
-%    \includegraphics{./images/pwdlist.eps}
+    \includegraphics[width = \textwidth]{./images/AlongCore.eps}
     \caption{按键部分}
     \label{fig:by:table}
   \end{minipage}%
@@ -236,12 +246,11 @@
     \centering
     \begin{tabular}{|c|c|} \hline
       管脚名 & 功能 \\ \hline\hline
-      Clk1     &   给密码处理的脉冲信号\\
-      Clk2     & 给按键计数器的按键脉冲 \\
-      En2      & 修改密码输出使能 \\
-      Out1     & 输入密码输出 \\
-      Out2     & 修改密码输出 \\
-      S0~s3    & 按键输入 \\ \hline
+      Change        &   修改密码使能                       \\
+      KeyPress      &   给按键计数器的按键脉冲  \\
+      KeyValue      &   按键值                                    \\
+      LockIt       &   上锁信号                                \\
+      LockState     &   开锁状态                                \\ \hline
     \end{tabular}
     \caption{功能表}
     \label{table:by:fig}
@@ -358,7 +367,7 @@ endmodule
 
 可以修改密码，最多7位，初始密码为0000。
 
-\paragraph{整体仿真}
+\paragraph{核心功能仿真}
 \begin{lstlisting}[language={verilog}]
 module Test();
 wire LockState;
@@ -425,8 +434,11 @@ endmodule
 
 \subsection{B部分仿真}
 
+
+%赖昕填充
+
 \section{工作说明}
-\paragraph{冯云龙}密码处理，密码列表，密码计数器，开锁控制器，实验报告。
+\paragraph{冯云龙}密码处理，密码列表，密码计数器，开锁控制器，计时器，实验报告。
 \subsection{密码处理}
 \begin{lstlisting}[language={verilog}]
 module pwdprocess(
@@ -454,19 +466,16 @@ module pwdlist(
     reg [15:0]pwd;            //每两位是一组密码.
     reg [2:0]count;
 
-    wire CLK;
-    assign CLK = keypress && change && unlock;
-
-    wire Enchange;
-    assign Enchange = change && unlock;
+    wire NClk;
+    assign NClk = keypress && change && unlock;
 
     initial begin
-    pwd = 0;
     count = 0;
-    pwdlen = 4;
+    pwd = 0;                  //初始密码
+    pwdlen = 4;               //初始密码长度
     end
 
-    always @(toselect,pwd)
+    always @(toselect,pwd)    //密码选择部分
     begin
     case(toselect)
     3'b000 : currpwd = pwd[1:0];
@@ -480,9 +489,9 @@ module pwdlist(
     endcase
     end
 
-    always @(posedge CLK or negedge Enchange)
+    always @(posedge NClk)
     begin
-    if(Enchange) begin
+    if(change && unlock) begin            //已经解锁并且给了密码修改使能
     case(count)
     3'b000 : pwd[1:0] = key;
     3'b001 : pwd[3:2] = key;
@@ -495,11 +504,11 @@ module pwdlist(
     endcase
     count = count + 1;
     end
-    else begin
-    if(unlock)
-    pwdlen = count;
-    count = 0;
+    else count = 0;
     end
+
+    always @(negedge change)begin         //密码长度修改
+    if(unlock) pwdlen = count;
     end
 
 endmodule
@@ -531,6 +540,124 @@ module Lock(
     assign state = (count == length);
 endmodule
 \end{lstlisting}
-\paragraph{赖昕}计时器，按键计数器，按键译码处理器,显示器。
+\subsection{核心功能封装}
+\begin{lstlisting}[language={verilog}]
+module Along(
+    input Change,                   //密码修改使能
+    input KeyPress,                 //按键脉冲
+    input [1:0]KeyValue,            //按键值
+    input Lock_It,                  //上锁信号
+    output LockState                //开锁状态
+    );
+
+      wire toLock;
+      assign toLock=~Lock_It;
+
+      wire [2:0]currlen;
+      wire [1:0]currpwd;
+      wire [2:0]pwdlen;
+      wire isRight;
+
+      Lock LockMgr
+             (.count(currlen),
+              .length(pwdlen),
+              .state(LockState));
+        counter PwdLen
+             (.CLK(isRight),
+              .CLR(toLock),
+              .EN(LockState),
+              .num(currlen));
+        pwdlist Pwd_list
+             (.change(Change),
+              .currpwd(currpwd),
+              .key(KeyValue),
+              .keypress(KeyPress),
+              .pwdlen(pwdlen),
+              .toselect(currlen),
+              .unlock(LockState));
+        pwdprocess Process
+             (.cmppwd(currpwd),
+              .keypress(KeyPress),
+              .keypwd(KeyValue),
+              .res(isRight));
+endmodule
+\end{lstlisting}
+
+\subsection{开锁控制器}
+\begin{lstlisting}[language={verilog}]
+module Lock(
+    input [2:0]count,              //当前输入正确的密码个数
+    input [2:0]length,             //密码长度
+    output state              //当前解锁状态，1为开锁
+    );
+    assign state = (count == length);
+endmodule
+\end{lstlisting}
+\subsection{计时器}
+\begin{lstlisting}[language={verilog}]
+module TimeClock(
+    input inClk,
+    output outClk
+    );
+    reg [31:0]timeclk;
+
+    assign outClk = timeclk[21];
+    initial begin
+    timeclk = 0;
+    end
+
+    always@(posedge inClk)begin
+    timeclk = timeclk +1;
+    end
+endmodule
+\end{lstlisting}
+\begin{lstlisting}[language={verilog}]
+module TimeShow(
+    input show,                 //显示切换信号
+    input clk,                  //时钟信号
+    input pause,                //暂停计时
+    input clr,                  //清零段
+    output full,                //进位信号
+    output reg sm_bit,          //片选信号
+    output reg[6:0]sm_seg       //显示数码管
+    );
+
+    reg [3:0]timesec0;
+    assign full = timesec0 == 4;
+
+    initial begin
+    sm_bit=1;
+    sm_seg=1;
+    timesec0=0;
+    end
+
+    always @(posedge clk or negedge clr) begin
+    if(~clr)
+      timesec0 = 0;
+    else
+    if(pause)begin
+        if(timesec0==4)
+        timesec0=0;
+        else
+        timesec0=timesec0+1;
+        end
+    end
+
+    always@(posedge show)
+    begin
+    case(timesec0)
+                0:sm_seg= 7'b0110011;                     //显示4
+                1:sm_seg= 7'b1111001;                      //显示3
+                2:sm_seg= 7'b1101101;                     //显示2
+                3:sm_seg= 7'b0110000;                     //显示1
+                4:sm_seg= 7'b1111110;                     //显示0
+                default:
+                sm_seg= 7'b0000000;                        //不显示
+    endcase
+    end
+endmodule
+\end{lstlisting}
+
+\paragraph{赖昕}按键计数器，按键译码处理器,显示器，最终组合。
 
 \end{document} 
