@@ -26,19 +26,22 @@
 \hrulefill \\[1.5cm]
 
 % 作者和其他信息
-\begin{minipage}{0.4\textwidth}
-\begin{flushleft} \large
-% 左侧悬空
-\end{flushleft}
-\end{minipage}
+\begin{figure}[htb]
+    \begin{minipage}[b]{0.5\textwidth}
+    \begin{flushleft} \large% 左侧悬空
 
-% 右侧
-\begin{minipage}{\textwidth}
-\begin{flushright} \large
-\emph{作者:}姓名\\
-\emph{学号:}学号
-\end{flushright}
-\end{minipage}
+    \end{flushleft}
+    \label{fig:left}
+  \end{minipage}%
+  \begin{minipage}[b]{0.5\textwidth}
+    \centering
+    \begin{flushright} \large% 右侧
+    \emph{作者:}姓名\\
+    \emph{学号:}学号
+    \end{flushright}
+    \label{fig:right}
+  \end{minipage}
+\end{figure}
 
 \vfill
 {\large \today}% 底部插入当日日期
