@@ -5,3 +5,5 @@ del *.toc
 del *.synctex(busy)
 del *.out
 del *.synctex.gz
+del *.blg
+del *.bbl

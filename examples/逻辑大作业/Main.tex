@@ -57,11 +57,11 @@
 \section{设计目的及要求}
 \begin{enumerate}
 \item 设计一个开锁密码至少为4位数字（或更多）的密码锁。
-\item 当开锁按扭开关（可设置8位或更多，其中只有4位有效，其余位为虚设）的输入代码等于所设密码时启动开锁控制电路，并且用绿灯亮、红灯灭表示开锁状态。
+\item 当开锁按键输入代码等于所设密码时启动开锁控制电路，并且用绿灯亮、红灯灭表示开锁状态。
 \item 从第一个按扭触动后的5秒内若未能将锁打开，则电路自动复位并发出报警信号，同时用绿灯灭、红灯亮表示关锁状态。
-\item 密码锁中的4位密码可以修改。
+\item 密码锁中的密码可以修改，最高7位。
 \item 记录按键次数并显示。
-\item 倒计时。
+\item 输入密码倒计时。
 \end{enumerate}
 
 \section{工作原理、系统方框图}
@@ -69,12 +69,45 @@
 \includegraphics[width=0.9\textwidth]{./images/struct.eps}
 \end{center}
 \section{各部分选定方案及电路组成、相关器件}
-\paragraph{密码处理}这部分我们使用的是一个等值比较器,对密码进行比对,当输入的密码与存储列表中的密码相等时，输出给计数器，使计数器计数。
-\paragraph{密码表}首先我们使用了16位寄存器以储存密码和密码长度，使用数据选择器对数据进行选择,在开锁情况下，给予修改信号可以对密码进行修改，当使用计数器对每一位进行修改，可以通过关闭修改信号以停止修改，当不再修改密码时，自动复位。
-\paragraph{密码计数器}串行输入密码，每输对一位密码，计一次数，可以通过按键计数器与计时器所给的复位信号进行复位(同步清零)。
-\paragraph{开锁控制器}实际上是一个等值比较器，将密码计数器的值与设置的密码长度进行比较，若相等，则输出为1。
-\paragraph{核心功能}就是对开锁，解锁，修改密码的整合。
-\paragraph{计时器}产生倒计时并可以输出倒计时归零信号。
+\subsection{密码处理}
+\subsubsection{选定方案}这部分我们使用的是一个等值比较器,对密码进行比对,当输入的密码与存储列表中的密码相等时，输出给计数器，使计数器计数。
+\subsubsection{电路组成}\includegraphics[width = 0.9\textwidth]{./images/ProcessRTL.eps}
+\subsubsection{相关器件}等值比较器，逻辑与门。
+
+\subsection{密码表}
+\subsubsection{选定方案}首先我们使用了16位寄存器以储存密码和密码长度，使用数据选择器对数据进行选择,在开锁情况下，给予修改信号可以对密码进行修改，当使用计数器对每一位进行修改，可以通过关闭修改信号以停止修改，当不再修改密码时，自动复位。
+\subsubsection{电路组成}\includegraphics[width = 0.9\textwidth]{./images/PwdlistRTL.eps}
+\subsubsection{相关器件}逻辑与门，逻辑非门，加法器，D触发器，数据选择器。
+
+\subsection{密码计数器}
+\subsubsection{选定方案}串行输入密码，每输对一位密码，计一次数，可以通过按键计数器与计时器所给的复位信号进行复位(同步清零)。
+\subsubsection{电路组成}\includegraphics[width = 0.9\textwidth]{./images/PwdLenRTL.eps}
+\subsubsection{相关器件}D触发器，加法器，数据选择器。
+
+\subsection{开锁控制器}
+\subsubsection{选定方案}实际上是一个等值比较器，将密码计数器的值与设置的密码长度进行比较，若相等，则输出为1。
+\subsubsection{电路组成}\includegraphics[width =0.9\textwidth]{./images/LockMgrRTL.eps}
+\subsubsection{相关器件}等值比较器。
+
+\subsection{核心功能}就是对开锁，解锁，修改密码的整合。
+\subsection{计时器}产生倒计时并可以输出倒计时归零信号。
+\subsubsection{选定方案}带有计数进位，清零端的计数器。
+\subsubsection{相关器件}七段数码管。
+
+\subsection{按键处理}
+\subsubsection{选定方案}以一个4-2编码器为基础进行改进。通过一个控制端对输出进行选择出口；并且设计了2个时钟输出端，其中一个给按键计数器，另外一个给密码处理；由于存在险象竞争，故给密码处理的时钟稍微比按键脉冲稍微延迟一些。延迟器可利用一个移位寄存器实现。
+\subsubsection{电路组成}\includegraphics[width =0.9\textwidth]{./images/pic4.eps}
+\subsubsection{相关器件}4-2编码器，移位寄存器。
+
+\subsection{按键计数器}
+\subsubsection{选定方案}以一个模8计数器为基础进行改进。计数器当前数值即当前输入密码的位数。并在此基础上设计了2个输出端。其中一个输出信号当按下第一个键后一直为1，这个信号用来作为计时器的计时开始输入端；另一个当计数满8时为1，这个信号用来作为给计数器的复位信号。
+\subsubsection{电路组成}\includegraphics[width =0.9\textwidth]{./images/pic5.eps}
+\subsubsection{相关器件}模8计数器，D触发器。
+
+\subsection{显示器}
+\subsubsection{选定方案}在计时器和按键计数器上有七段数码管输出端，制作好管脚约束即可显示。
+\subsubsection{相关器件}七段数码管。
+
 \section{调试过程}
 \subsection{密码表中出现的问题}
 \begin{enumerate}
@@ -117,9 +150,23 @@
 \includegraphics[width=0.9\textwidth]{./images/Lsim3.eps}
 
 经过检查代码，发现在always块的敏感列表除posedge clk外未加clr，导致清零端同步时序。另外再将clr的有效值更改为0即可。
+
+\subsection{计时器模块问题}
+在计时器写好代码，仿真、综合、约束管脚之后，发现仿真正确，但是在开发板中调试却得不到结果。起初是不断给时钟上升沿，但就是没有反应，预测时钟端出现不可综合问题。将代码中的“=”改成“<=”后，再次进行仿真、综合，这次发现时钟端有效，但异步清零端无效。最后迫不得已把计时器模块的任务交给了队友冯云龙，得以解决。
+
+\includegraphics[width=0.9\textwidth]{./images/pic3.eps}
+
+\subsection{组装出现的问题}
+
+在将各组员的工作组装时，拼接block完成之后综合时报错，封装IP时出现差错；再重新封装IP时，出现如图1选项，这时选择如图2选项时，再进行拼接综合后，报错消失。
+
+\includegraphics[width=0.9\textwidth]{./images/pic1.eps}
+
+\includegraphics[width=0.9\textwidth]{./images/pic2.eps}
+
 \section{设计结论}
 \subsection{项目成果}
-通过团队的分工与合作，我们完成了带有三个附加功能的密码锁。可以修改密码，通过按键计数和时间限制进行报警。
+通过团队的分工与合作，我们完成了带有三个附加功能的密码锁。可以修改真实密码数值以及位数，并且可以记录当前按键次数，以及输入密码时的时间倒计时进行保障安全。
 \subsection{项目团队}
 我们的团队一共有两名成员，地位是等同的，分工协作完成了我们的项目。期间我们进行了各种讨论以敲定最终的接口。
 
@@ -128,16 +175,34 @@
 很多时候一个大的工程都不是一个人完成的，而是许许多多的人分工合作完成的，如何协调任务，分配任务是一个很重要的问题。计算机领域的解决方案就是设计接口，这样就隐藏了具体实现，只关注功能的可用性。
 每一个模块在设计之初如果就完成了整合，那么每个模块只要按照文档实现，那么实现后一定也能很好的整合。这次的大作业，我们只有两个人，设计的重要性就已经体现出来，更大的工程项目肯定对于设计的要求会更高。
 团队的合作，设计是极为重要的。
-\subsection{赖昕}
+\subsection{赖昕}在这次大作业的完成过程中，我深切地感受到工程实际实现与理论之间的差距。团队从设计开始，一直到最终的实现，都是坎坷曲折的。最初，我本以为设计出各个模块分好工后就能够一帆风顺地完成作业。然而，实际上我们只花费了半天时间在理论的设计上，在具体操作和调试过程中花费的时间和精力远远大于理论设计上。当设计出具体用什么器件来实现某项功能并写好代码时，vivado会报错；处理好之后写好激励代码进行仿真时，又会发现一系列的错误；在处理好之后进行综合，又会出现不可预知的错误；最后就算历经千辛万苦在vivado上仿真综合全都正确之后，连接到开发板上后又会遇到无效的问题。并且在各组员分工完成进行组装的阶段，也会出现各种各样意想不到的错误。
+另外，通过这次大作业，我对vivado更加熟悉了，使用verilog语言编写程序也更加熟练了，对FPGA编程的经验也更加丰富，对各个器件的功能具体实现也有了清晰的认识。此外，我更是接触到了延迟器、分频器等等之前不甚了解的器件的具体实现方法。其中延迟器可以运用移位寄存器来实现，分频器可以运用计数器来进行实现。
+最终，整个密码器的实现与整个团队的合作也是密不可分的。正是团队组员之间的合理分工与协作，才能让最终的组装得到满意的结果。也正是这种合理分工，才使得合作有了意义。
 
 
 \section{参考文献}
 
 \begin{enumerate}
-  \item verilog语言实现任意分频http://blog.csdn.net/ywhfdl/article/details/7641288
+  \item verilog语言实现任意分频 
+  
+  http://blog.csdn.net/ywhfdl/article/details/7641288
+  \item verilog 语言关于如何处理一个变量在多个always块里赋值不可综合问题 
+  
+  http://bbs.csdn.net/topics/390752257
+  \item 如何解决vivado对时钟端有关问题的报错 
+  
+  http://blog.csdn.net/cnkuaike123/article/details/48403067
+  \item FPGA中的延时处理 
+  
+  https://www.mianbaoban.cn/blog/post/64632
+  \item 实现信号延时的方法 
+  
+  http://blog.csdn.net/xiangyuqxq/article/details/7255967
   \item verilog入门教程
   \item Tobias Oetiker,Hubert Partl, Irene Hyna and Elisabeth Schlegl,lshort-zh-cn
-  \item 单片机数码管显示消隐 http://www.eeworld.com.cn/mcu/article\_2016122332568.html
+  \item 单片机数码管显示消隐 
+  
+  http://www.eeworld.com.cn/mcu/article\_2016122332568.html
 \end{enumerate}
 
 \newpage
@@ -239,7 +304,7 @@
   \begin{minipage}[b]{0.5\textwidth}
     \centering
     \includegraphics[width = \textwidth]{./images/AlongCore.eps}
-    \caption{按键部分}
+    \caption{核心综合}
     \label{fig:by:table}
   \end{minipage}%
   \begin{minipage}[b]{0.5\textwidth}
@@ -258,8 +323,61 @@
 \end{figure}
 
 
+\subsection{按键部分}
+
+\begin{figure}[htb]
+  \begin{minipage}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[height= 5cm]{./images/p2.eps}
+    \caption{按键部分}
+    \label{fig:by:table}
+  \end{minipage}%
+  \begin{minipage}[b]{0.5\textwidth}
+    \centering
+    \begin{tabular}{|c|c|} \hline
+      管脚名 & 功能 \\ \hline\hline
+      clk1     &   脉冲信号（给密码处理）\\
+      clk2     & 按键脉冲（给按键计数器） \\
+      en2      & 修改密码输出使能 \\
+      out1     & 输入密码输出（给密码处理） \\
+      out2     & 修改密码输出 \\
+      s0~s3    & 按键输入 \\ \hline
+    \end{tabular}
+    \caption{功能表}
+    \label{table:by:fig}
+  \end{minipage}
+\end{figure}
+
+\newpage
+\subsection{按键计数器部分}
+
+\begin{figure}[htb]
+  \begin{minipage}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[height= 5cm]{./images/p1.eps}
+    \caption{按键计数器部分}
+    \label{fig:by:table}
+  \end{minipage}%
+  \begin{minipage}[b]{0.5\textwidth}
+    \centering
+    \begin{tabular}{|c|c|} \hline
+      管脚名 & 功能 \\ \hline\hline
+      clk      &  按键脉冲（来自按键处理）\\
+      clr      & 异步清零端（低有效） \\
+      Z        & 满八进一的输出（给计数器提供的复位信号） \\
+      a~g      & 七段数码管输出 \\
+      q0~q2    & 当前计数的三位2进制表示数 \\
+      start    & 开始计数信号（给计时器提供） \\ \hline
+    \end{tabular}
+    \caption{功能表}
+    \label{table:by:fig}
+  \end{minipage}
+\end{figure}
+
+
 \section{总体设计图}
 
+\includegraphics[width=0.9\textwidth]{./images/electric_lock.eps}
 
 \section{仿真结果}
 \subsection{A部分仿真}
@@ -433,9 +551,93 @@ endmodule
 运行效果良好，开锁上锁，修改密码都做的相当不错。
 
 \subsection{B部分仿真}
+\paragraph{按键处理}
+\begin{lstlisting}[language={verilog}]
+module press_input_sim;
+reg en2,s0,s1,s2,s3;
+wire [1:0]out1,out2;
+wire clk1,clk2;
+press_input_n a(clk1,clk2,en2,out1,out2,s0,s1,s2,s3);
+initial
+begin
+    en2=0;
+    {s3,s2,s1,s0}=4'b0000;
+    #100
+    {s3,s2,s1,s0}=4'b0001;
+    #100
+    {s3,s2,s1,s0}=4'b0000;
+    #100
+    {s3,s2,s1,s0}=4'b0010;
+    #100
+    {s3,s2,s1,s0}=4'b0000;
+end
+endmodule
 
+\end{lstlisting}
+\includegraphics[width=0.9\textwidth]{./images/Lsim5.eps}
 
-%赖昕填充
+\paragraph{按键计数器}
+\begin{lstlisting}[language={verilog}]
+module press_counter_sim;
+reg clk,clr;
+wire a,b,c,d,e,f,g,q0,q1,q2,Z,time_counter_start;
+press_counter_n my(Z,a,b,c,clk,clr,d,e,f,g,q0,q1,q2,time_counter_start);
+initial
+begin
+    clr=0;
+    clk=0;
+    #10 clr=1;
+end
+always #40 clk=~clk;
+endmodule
+
+\end{lstlisting}
+\includegraphics[width=0.9\textwidth]{./images/Lsim6.eps}
+
+\paragraph{整体仿真}
+\begin{lstlisting}[language={verilog}]
+module lai_sim;
+wire Z,a,b,c,d,e,f,g,q0,q1,q2,clk1,time_counter_start;
+wire [6:0]s;
+wire [1:0]out1,out2;
+reg clr,en2,s0,s1,s2,s3;
+lai lx
+  (Z,a,b,c,clk1,clr,d,e,
+    en2,f,g,out1,out2,q0,q1,
+    q2,s0,s1,s2,s3,time_counter_start);
+    initial
+    begin
+        clr=0;
+        en2=0;
+        s0=0;
+        s1=0;
+        s2=0;
+        s3=0;
+        #10 clr=1;
+        #10 clr=0;
+        #10 s1=1;
+        #10 s1=0;//1
+        #10 s0=1;
+        #10 s0=0;//0
+        #10 s0=1;
+        #10 s0=0;//0
+        #10 s0=1;
+        #10 s0=0;//0
+        #10 s0=1;
+        #10 s0=0;//0
+        #10 s0=1;
+        #10 s0=0;//0
+        #10 s0=1;
+        #10 s0=0;//0
+        #10 s0=1;
+        #10 s0=0;//0
+    end
+endmodule
+
+\end{lstlisting}
+
+\includegraphics[width=0.9\textwidth]{./images/Lsim4.eps}
+
 
 \section{工作说明}
 \paragraph{冯云龙}密码处理，密码列表，密码计数器，开锁控制器，计时器，实验报告。
@@ -452,6 +654,7 @@ module pwdprocess(
     assign res = cmp && keypress;
 endmodule
 \end{lstlisting}
+
 \subsection{密码表}
 \begin{lstlisting}[language={verilog}]
 module pwdlist(
@@ -491,7 +694,7 @@ module pwdlist(
 
     always @(posedge NClk)
     begin
-    if(change && unlock) begin            //已经解锁并且给了密码修改使能
+    if(change && unlock) begin//已经解锁并且给了密码修改使能
     case(count)
     3'b000 : pwd[1:0] = key;
     3'b001 : pwd[3:2] = key;
@@ -513,6 +716,7 @@ module pwdlist(
 
 endmodule
 \end{lstlisting}
+
 \subsection{密码计数器}
 \begin{lstlisting}[language={verilog}]
 module counter(
@@ -540,6 +744,7 @@ module Lock(
     assign state = (count == length);
 endmodule
 \end{lstlisting}
+
 \subsection{核心功能封装}
 \begin{lstlisting}[language={verilog}]
 module Along(
@@ -583,16 +788,6 @@ module Along(
 endmodule
 \end{lstlisting}
 
-\subsection{开锁控制器}
-\begin{lstlisting}[language={verilog}]
-module Lock(
-    input [2:0]count,              //当前输入正确的密码个数
-    input [2:0]length,             //密码长度
-    output state              //当前解锁状态，1为开锁
-    );
-    assign state = (count == length);
-endmodule
-\end{lstlisting}
 \subsection{计时器}
 \begin{lstlisting}[language={verilog}]
 module TimeClock(
@@ -658,6 +853,85 @@ module TimeShow(
 endmodule
 \end{lstlisting}
 
-\paragraph{赖昕}按键计数器，按键译码处理器,显示器，最终组合。
+\paragraph{赖昕}按键计数器，按键译码处理器，显示器，最终组装。
 
+\subsection{D触发器}
+\begin{lstlisting}[language={verilog}]
+module dff(clk,clr,d,q);//d触发器
+input clk,clr,d;
+//clk：时钟沿（上升沿触发）
+//clr：异步清零端（低电平有效）
+//d：触发器输入值端
+output q;//q：触发器输出端
+reg q;
+always@(posedge clk or negedge clr)//clk上升沿触发，clr异步
+begin
+if(~clr) q<=0;//clr低电平有效
+else if(clk) q<=d;//来时钟沿时，q=d;
+end
+endmodule
+
+\end{lstlisting}
+\subsection{4-2编码器}
+\begin{lstlisting}[language={verilog}]
+module encoder4_2(en1,en2,s0,s1,s2,s3,out1,out2);
+input en1,en2;//en1:译码器使能端；en2:修改密码使能端
+input s0,s1,s2,s3;//s0~s3;按键输入
+output [1:0]out1;//out1：用于输入密码的输出
+output [1:0]out2;//out2：用于修改密码的输出
+reg [1:0]out1;
+reg [1:0]out2;
+always@(*)
+begin
+    if(~en1)//如果en1为低电位，则输出均为高阻态
+    begin
+        out1=2'bzz;
+        out2=2'bzz;
+    end
+    else if(~en2)
+    //如果en1为高电位且en2为低电位，
+    //则输入密码out1输出为编码输出，修改密码out2输出为高阻态
+    begin
+        out2=2'bzz;
+        case({s3,s2,s1,s0})
+            4'b0001:out1=2'b00;
+            4'b0010:out1=2'b01;
+            4'b0100:out1=2'b10;
+            4'b1000:out1=2'b11;
+        endcase
+    end
+    else
+    //如果en1为高电位且en2为高电位，
+    //则修改密码out2输出为编码输出，输入密码out1输出为高阻态
+    begin
+        out1=2'bzz;
+        case({s3,s2,s1,s0})
+            4'b0001:out2=2'b00;
+            4'b0010:out2=2'b01;
+            4'b0100:out2=2'b10;
+            4'b1000:out2=2'b11;
+        endcase
+    end
+end
+endmodule
+\end{lstlisting}
+\subsection{移位寄存器}
+\begin{lstlisting}[language={verilog}]
+module shift_register(clk,I,O);
+input I,clk;
+output O;
+reg [3:0]b;
+wire O;
+always@(posedge clk)//当时钟上升沿来到时，寄存器移位。
+begin
+    b<={b[2:0],I};
+end
+assign O=b[3];
+endmodule
+\end{lstlisting}
+
+\subsection{按键处理}
+\includegraphics[width=0.9\textwidth]{./images/block1.eps}
+\subsection{按键计数器}
+\includegraphics[width=0.9\textwidth]{./images/block2.eps}
 \end{document} 
